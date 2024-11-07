@@ -140,8 +140,8 @@ function displayRooms(rooms) {
     }
 
     rooms.forEach(room => {
-        const row = document.createElement('tr');
-        row.className = 'bg-white border-b hover:bg-gray-50';
+        const row = document.createElement('tr')
+        row.className = 'bg-white border-b hover:bg-gray-50'
         row.innerHTML = `
             <td class="px-6 py-4">
                 <div class="flex items-center">
@@ -159,12 +159,46 @@ function displayRooms(rooms) {
             </td>
             <td class="px-6 py-4">${room.room_zap_goal || 0} sats</td>
             <td class="px-6 py-4">
-                <button onclick="editRoom('${room.id}')" class="font-medium text-blue-600 hover:underline mr-3">Edit</button>
-                <button onclick="deleteRoom('${room.id}')" class="font-medium text-red-600 hover:underline">Delete</button>
+                <button class="edit-btn font-medium text-blue-600 hover:underline mr-3">Edit</button>
+                <button class="delete-btn font-medium text-red-600 hover:underline">Delete</button>
             </td>
-        `;
-        tableBody.appendChild(row);
-    });
+        `
+
+        // Attach event listeners
+        const editBtn = row.querySelector('.edit-btn')
+        const deleteBtn = row.querySelector('.delete-btn')
+
+        editBtn.addEventListener('click', () => editRoom(room.id))
+        deleteBtn.addEventListener('click', () => deleteRoom(room.id))
+
+        tableBody.appendChild(row)
+    })
+}
+
+// Define the functions normally (not on window)
+async function deleteRoom(id) {
+    if (confirm('Are you sure you want to delete this room?')) {
+        try {
+            const response = await fetch(`/api/rooms/${id}`, {
+                method: 'DELETE'
+            })
+
+            if (response.ok) {
+                fetchRooms()
+            } else {
+                const errorData = await response.json()
+                throw new Error(errorData.message || 'Failed to delete room')
+            }
+        } catch (error) {
+            console.error('Error deleting room:', error)
+            alert('Failed to delete room: ' + error.message)
+        }
+    }
+}
+
+function editRoom(id) {
+    // Your edit room logic here
+    console.log('Editing room:', id)
 }
 
 // Add Room form submission
@@ -252,23 +286,6 @@ document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
         alert(`Failed to create room: ${error.message}`)
     }
 })
-
-// Delete room function
-async function deleteRoom(id) {
-    if (confirm('Are you sure you want to delete this room?')) {
-        try {
-            const response = await fetch(`/api/rooms/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                fetchRooms();
-            }
-        } catch (error) {
-            console.error('Error deleting room:', error);
-        }
-    }
-}
 
 // Initial load of rooms
 fetchRooms();
