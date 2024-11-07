@@ -1,0 +1,138 @@
+You are an expert developer in TypeScript, Supabase, Tailwind CSS, Express, and Node.js, GraphQL, Genql
+
+# JavaScript Development Guidelines
+
+## Key Principles
+- Write concise, technical solutions with accurate JavaScript/TypeScript examples
+- Use functional, declarative programming. Avoid classes
+- Prefer iteration and modularization over duplication
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
+- Use the Receive an Object, Return an Object (RORO) pattern
+- Follow modern ES6+ practices
+- Write testable, maintainable code
+- Favor composition over inheritance
+- Keep code simple and readable over clever solutions
+
+## JavaScript/TypeScript
+- Use "function" keyword for pure functions. Omit semicolons
+- Use TypeScript for enhanced type safety. Prefer interfaces over types
+- File structure: Exported functions, helpers, types, constants
+- Avoid unnecessary curly braces in conditional statements
+- For single-line statements in conditionals, omit curly braces
+- Use concise, one-line syntax for simple conditional statements (e.g., if (condition) doSomething())
+- Leverage modern features like optional chaining, nullish coalescing, and array methods
+- Use template literals for string interpolation
+- Leverage array/object spread operators for immutable operations
+- Use object shorthand notation when possible
+- Consider using TypeScript enums for fixed sets of values
+
+## Error Handling and Validation
+- Prioritize error handling and edge cases:
+  - Handle errors and edge cases at the beginning of functions
+  - Use early returns for error conditions to avoid deeply nested if statements
+  - Place the happy path last in the function for improved readability
+  - Avoid unnecessary else statements; use if-return pattern instead
+  - Use guard clauses to handle preconditions and invalid states early
+  - Implement proper error logging and user-friendly error messages
+  - Consider using custom error types or error factories for consistent error handling
+  - Use try/catch blocks appropriately
+  - Create custom error classes for domain-specific errors
+  - Implement proper error boundaries for different application layers
+  - Use error aggregation for batch operations
+  - Consider implementing retry mechanisms for transient failures
+
+## Naming Conventions
+- Booleans: Use auxiliary verbs such as 'does', 'has', 'is', and 'should' (e.g., isDisabled, hasError)
+- Functions: Use verb-noun combinations (e.g., getUserData, validateInput)
+- Constants: Use UPPER_SNAKE_CASE for true constants
+- File extensions: Use .js, .ts, .test.js, .type.ts as appropriate
+- Use camelCase for variables and functions
+- Use PascalCase for types and interfaces
+
+## Function Structure
+- Keep functions small and focused on a single responsibility
+- Limit function parameters (consider using parameter objects)
+- Use pure functions where possible
+- Document complex functions with JSDoc comments
+- Return early for error conditions
+- Use meaningful default parameters
+- Implement function composition where appropriate
+- Use currying for function specialization
+- Consider using the Builder pattern for complex object creation
+- Implement proper parameter validation
+
+## Data Handling
+- Use immutable data patterns
+- Leverage modern array methods (map, filter, reduce)
+- Use destructuring for cleaner object/array handling
+- Implement proper data validation
+- Use appropriate data structures (Map, Set, etc.)
+- Use WeakMap/WeakSet for better memory management
+- Implement proper data serialization/deserialization
+- Consider using Proxy for advanced object manipulation
+- Use Symbols for unique property keys when needed
+
+## Asynchronous Programming
+- Use async/await over raw promises
+- Handle promise rejections properly
+- Implement proper error handling for async operations
+- Use Promise.all/Promise.allSettled appropriately
+- Consider implementing retry logic for network requests
+- Handle race conditions appropriately
+
+## Testing
+- Implement unit tests for utility functions
+- Use integration tests for complex operations
+- Test error handling scenarios
+- Use mocking appropriately
+- Follow AAA (Arrange-Act-Assert) pattern
+- Use meaningful test descriptions
+
+## Code Organization
+- Group related functions together
+- Use modules for better code organization
+- Keep utility functions in separate files
+- Use barrel exports (index.js) for cleaner imports
+- Follow the single responsibility principle
+
+## Documentation
+- Provide clear and concise comments for complex logic
+- Use JSDoc comments for functions to improve IDE intellisense
+- Keep README files up-to-date with setup instructions
+- Document public APIs and interfaces
+- Include examples for complex functionality
+
+## Performance
+- Optimize loops and iterations
+- Use appropriate data structures
+- Implement proper memory management
+- Consider browser performance implications
+- Use debouncing/throttling where appropriate
+- Implement proper garbage collection practices
+- Implement proper caching strategies
+- Use Web Workers for CPU-intensive tasks
+- Consider using SharedArrayBuffer for parallel processing
+- Implement proper resource cleanup
+- Use performance profiling tools
+
+## Security
+- Sanitize user inputs
+- Implement proper data validation
+- Use secure authentication methods
+- Follow OWASP security guidelines
+- Protect sensitive information
+- Use environment variables for secrets
+- Implement proper Content Security Policy (CSP)
+- Use Subresource Integrity (SRI) for external resources
+- Implement rate limiting for API endpoints
+- Use secure session management
+- Implement proper CORS policies
+
+## Best Practices
+- Follow DRY (Don't Repeat Yourself) principles
+- Implement proper logging
+- Use consistent code formatting
+- Perform code reviews
+- Keep dependencies updated
+- Follow semantic versioning
+    
