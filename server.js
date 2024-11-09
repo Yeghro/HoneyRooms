@@ -202,6 +202,40 @@ app.get('/api/health', async (req, res) => {
   }
 })
 
+// Add this endpoint to fetch a single room by ID
+app.get('/api/rooms/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+
+        const { data: room, error } = await supabase
+            .from('room_info')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (error) {
+            console.error('Supabase error:', error)
+            throw error
+        }
+        
+        if (!room) {
+            return res.status(404).json({ 
+                error: 'Room not found',
+                details: `No room found with ID: ${id}`
+            })
+        }
+
+        console.log('Fetched room:', room) // Debug log
+        res.json(room)
+    } catch (error) {
+        console.error('Error fetching room:', error)
+        res.status(500).json({ 
+            error: 'Failed to fetch room',
+            details: error.message
+        })
+    }
+})
+
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)

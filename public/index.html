@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/YEGHROlogo.webp">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,143 +38,163 @@
         </div>
 
         <!-- Add Room Modal -->
-        <div id="addRoomModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-            <div class="relative p-4 w-full max-w-md max-h-full">
-                <div class="relative bg-white rounded-lg shadow">
+        <div id="addRoomModal" 
+             role="dialog"
+             aria-labelledby="addRoomModalTitle"
+             aria-modal="true"
+             class="hidden fixed inset-0 z-50">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+            
+            <!-- Modal Container -->
+            <div class="flex min-h-screen items-center justify-center p-4">
+                <!-- Modal Content -->
+                <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+                    <!-- Modal Header -->
                     <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t">
-                        <h3 class="text-xl font-semibold">Add New Room</h3>
-                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center" data-modal-hide="addRoomModal">
+                        <h2 id="addRoomModalTitle" class="text-xl font-semibold text-gray-900">
+                            Add New Room
+                        </h2>
+                        <button type="button" 
+                                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center"
+                                data-modal-hide="addRoomModal"
+                                aria-label="Close modal">
                             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
                             </svg>
                         </button>
                     </div>
-                    <form id="addRoomForm" class="p-4 md:p-5">
-                        <div class="grid gap-4 mb-4">
-                            <div>
-                                <label for="roomName" class="block mb-2 text-sm font-medium text-gray-900">Room Name *</label>
-                                <input type="text" name="roomName" id="roomName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                            </div>
-                            <div>
-                                <label for="roomNpub" class="block mb-2 text-sm font-medium text-gray-900">Room Npub *</label>
-                                <input type="text" id="roomNpub" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                            </div>
-                            <div class="space-y-2">
-                                <label for="roomNsec" class="block mb-2 text-sm font-medium text-gray-900">Room Nsec *</label>
-                                <div class="flex gap-2">
-                                    <input type="text" 
-                                           id="roomNsec" 
-                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
-                                           required>
-                                    <button type="button" 
-                                            id="generateKeyPair" 
-                                            class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:ring-4 focus:ring-green-300">
-                                        Generate Keys
+                    
+                    <!-- Modal Body -->
+                    <div class="p-4 md:p-5">
+                        <!-- Tabs Navigation -->
+                        <div class="mb-4 border-b border-gray-200">
+                            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" role="tablist">
+                                <li class="mr-2" role="presentation">
+                                    <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 aria-selected:text-blue-600 aria-selected:border-blue-600" 
+                                            id="setup-tab" 
+                                            data-tabs-target="#setup"
+                                            type="button" 
+                                            role="tab" 
+                                            aria-controls="setup" 
+                                            aria-selected="true">
+                                        Setup Room
+                                    </button>
+                                </li>
+                                <li class="mr-2" role="presentation">
+                                    <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 aria-selected:text-blue-600 aria-selected:border-blue-600" 
+                                            id="details-tab" 
+                                            data-tabs-target="#details"
+                                            type="button" 
+                                            role="tab" 
+                                            aria-controls="details" 
+                                            aria-selected="false">
+                                        Room Details
+                                    </button>
+                                </li>
+                                <li class="mr-2" role="presentation">
+                                    <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 aria-selected:text-blue-600 aria-selected:border-blue-600" 
+                                            id="invites-tab" 
+                                            data-tabs-target="#invites"
+                                            type="button" 
+                                            role="tab" 
+                                            aria-controls="invites" 
+                                            aria-selected="false">
+                                        Invites
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Tabs Content -->
+                        <form id="addRoomForm">
+                            <!-- Add a wrapper div for all tab panels with fixed height -->
+                            <div class="h-[600px] overflow-y-auto">
+                                <!-- Setup Room Tab -->
+                                <div id="setup" role="tabpanel" aria-labelledby="setup-tab">
+                                    <div class="grid gap-4 mb-4">
+                                        <div>
+                                            <label for="roomName" class="block mb-2 text-sm font-medium text-gray-900">Room Name *</label>
+                                            <input type="text" name="roomName" id="roomName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                                        </div>
+                                        <div>
+                                            <label for="roomNpub" class="block mb-2 text-sm font-medium text-gray-900">Room Npub *</label>
+                                            <input type="text" id="roomNpub" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <label for="roomNsec" class="block mb-2 text-sm font-medium text-gray-900">Room Nsec *</label>
+                                            <div class="flex gap-2">
+                                                <input type="text" id="roomNsec" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                                                <button type="button" id="generateKeyPair" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:ring-4 focus:ring-green-300">
+                                                    Generate Keys
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label for="roomDescription" class="block mb-2 text-sm font-medium text-gray-900">Description</label>
+                                            <textarea id="roomDescription" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" rows="3"></textarea>
+                                        </div>
+                                        <div>
+                                            <label for="roomOwner" class="block mb-2 text-sm font-medium text-gray-900">Room Owner UUID *</label>
+                                            <input type="text" id="roomOwner" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="roomVisibility" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" checked>
+                                            <label for="roomVisibility" class="ml-2 text-sm font-medium text-gray-900">Public Room</label>
+                                        </div>
+                                    </div>
+                                    <!-- Move submit button inside setup tab -->
+                                    <button type="submit" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+                                        Create Room
                                     </button>
                                 </div>
-                            </div>
-                            <div id="generatedKeys" class="hidden space-y-2">
-                                <div class="p-4 bg-gray-50 rounded-lg">
-                                    <div class="space-y-2">
+
+                                <!-- Room Details Tab -->
+                                <div id="details" role="tabpanel" aria-labelledby="details-tab" class="hidden">
+                                    <div class="grid gap-4 mb-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700">Public Key (npub)</label>
-                                            <div class="flex items-center gap-2">
-                                                <input type="text" 
-                                                       id="generatedNpub" 
-                                                       class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
-                                                       readonly>
-                                                <button type="button" 
-                                                        onclick="copyToClipboard('generatedNpub')" 
-                                                        class="p-2 text-gray-500 hover:text-gray-700">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                            <label for="roomPictureUrl" class="block mb-2 text-sm font-medium text-gray-900">Picture URL</label>
+                                            <input type="url" id="roomPictureUrl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700">Private Key (nsec)</label>
-                                            <div class="flex items-center gap-2">
-                                                <input type="text" 
-                                                       id="generatedNsec" 
-                                                       class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
-                                                       readonly>
-                                                <button type="button" 
-                                                        onclick="copyToClipboard('generatedNsec')" 
-                                                        class="p-2 text-gray-500 hover:text-gray-700">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                            <label for="zapGoal" class="block mb-2 text-sm font-medium text-gray-900">Zap Goal</label>
+                                            <input type="number" id="zapGoal" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" min="0">
                                         </div>
-                                        <button type="button" 
-                                                id="useGeneratedKeys" 
-                                                class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:ring-blue-300">
-                                            Use These Keys
-                                        </button>
+                                        <div>
+                                            <label for="relayUrl" class="block mb-2 text-sm font-medium text-gray-900">Relay URL</label>
+                                            <input type="url" id="relayUrl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                        </div>
+                                        <div>
+                                            <label for="roomNip05" class="block mb-2 text-sm font-medium text-gray-900">NIP-05</label>
+                                            <input type="text" id="roomNip05" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                        </div>
+                                        <div>
+                                            <label for="lightningAddress" class="block mb-2 text-sm font-medium text-gray-900">Lightning Address</label>
+                                            <input type="text" id="lightningAddress" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="saveChatDirective" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                            <label for="saveChatDirective" class="ml-2 text-sm font-medium text-gray-900">Save Chat History</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Invites Tab -->
+                                <div id="invites" role="tabpanel" aria-labelledby="invites-tab" class="hidden">
+                                    <div class="grid gap-4 mb-4">
+                                        <div>
+                                            <label for="nostrAcl" class="block mb-2 text-sm font-medium text-gray-900">Nostr ACL (comma-separated npubs)</label>
+                                            <input type="text" id="nostrAcl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                        </div>
+                                        <div>
+                                            <label for="emailAcl" class="block mb-2 text-sm font-medium text-gray-900">Email ACL (comma-separated)</label>
+                                            <input type="text" id="emailAcl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                <label for="roomOwner" class="block mb-2 text-sm font-medium text-gray-900">Room Owner UUID *</label>
-                                <div class="flex gap-2">
-                                    <input type="text" 
-                                           id="roomOwner" 
-                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
-                                           required>
-                                    <button type="button" 
-                                            id="generateUUID" 
-                                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:ring-4 focus:ring-blue-300">
-                                        Generate UUID
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label for="roomDescription" class="block mb-2 text-sm font-medium text-gray-900">Description</label>
-                                <textarea id="roomDescription" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" rows="3"></textarea>
-                            </div>
-                            <div>
-                                <label for="roomPictureUrl" class="block mb-2 text-sm font-medium text-gray-900">Picture URL</label>
-                                <input type="url" id="roomPictureUrl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                            </div>
-                            <div>
-                                <label for="zapGoal" class="block mb-2 text-sm font-medium text-gray-900">Zap Goal</label>
-                                <input type="number" id="zapGoal" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" min="0">
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="roomVisibility" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" checked>
-                                <label for="roomVisibility" class="ml-2 text-sm font-medium text-gray-900">Public Room</label>
-                            </div>
-                            <div>
-                                <label for="relayUrl" class="block mb-2 text-sm font-medium text-gray-900">Relay URL</label>
-                                <input type="url" id="relayUrl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                            </div>
-                            <div>
-                                <label for="nostrAcl" class="block mb-2 text-sm font-medium text-gray-900">Nostr ACL (comma-separated npubs)</label>
-                                <input type="text" id="nostrAcl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                            </div>
-                            <div>
-                                <label for="emailAcl" class="block mb-2 text-sm font-medium text-gray-900">Email ACL (comma-separated)</label>
-                                <input type="text" id="emailAcl" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="saveChatDirective" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                                <label for="saveChatDirective" class="ml-2 text-sm font-medium text-gray-900">Save Chat History</label>
-                            </div>
-                            <div>
-                                <label for="roomNip05" class="block mb-2 text-sm font-medium text-gray-900">NIP-05</label>
-                                <input type="text" id="roomNip05" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                            </div>
-                            <div>
-                                <label for="lightningAddress" class="block mb-2 text-sm font-medium text-gray-900">Lightning Address</label>
-                                <input type="text" id="lightningAddress" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                            </div>
-                        </div>
-                        <button type="submit" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-                            Create Room
-                        </button>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

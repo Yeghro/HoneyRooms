@@ -42,54 +42,44 @@ function isValidUUID(uuid) {
     return uuidRegex.test(uuid)
 }
 
-// Add this UUID generator function
-function generateUUID() {
-    return crypto.randomUUID()
-}
-
-// Add event listeners after DOM content is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Key generation handler
+function setupKeyGeneration() {
     const generateButton = document.getElementById('generateKeyPair')
-    const useKeysButton = document.getElementById('useGeneratedKeys')
-    const generatedKeysDiv = document.getElementById('generatedKeys')
+    const npubInput = document.getElementById('roomNpub')
+    const nsecInput = document.getElementById('roomNsec')
 
-    // Make copyToClipboard available globally
-    window.copyToClipboard = copyToClipboard
+    if (!generateButton || !npubInput || !nsecInput) {
+        console.warn('Key generation elements not found in DOM')
+        return
+    }
 
-    generateButton?.addEventListener('click', () => {
+    generateButton.addEventListener('click', () => {
         try {
             const { npub, nsec } = generateKeyPair()
             
-            // Fill in the generated keys
-            document.getElementById('generatedNpub').value = npub
-            document.getElementById('generatedNsec').value = nsec
-            
-            // Show the generated keys section
-            generatedKeysDiv.classList.remove('hidden')
+            // Double-check elements exist before setting values
+            if (npubInput && nsecInput) {
+                npubInput.value = npub
+                nsecInput.value = nsec
+            } else {
+                throw new Error('Input fields not found')
+            }
         } catch (error) {
             console.error('Error generating keys:', error)
             alert('Failed to generate keys. Please try again.')
         }
     })
+}
 
-    useKeysButton?.addEventListener('click', () => {
-        const npub = document.getElementById('generatedNpub').value
-        const nsec = document.getElementById('generatedNsec').value
-        
-        // Fill in the form fields
-        document.getElementById('roomNpub').value = npub
-        document.getElementById('roomNsec').value = nsec
-        
-        // Hide the generated keys section
-        generatedKeysDiv.classList.add('hidden')
-    })
-
-    // Add UUID generator button handler
-    const generateUUIDButton = document.getElementById('generateUUID')
-    generateUUIDButton?.addEventListener('click', () => {
-        const uuid = generateUUID()
-        document.getElementById('roomOwner').value = uuid
-    })
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize tabs
+    initTabs()
+    
+    // Setup key generation
+    setupKeyGeneration()
+    
+    // ... rest of your initialization code ...
 })
 
 // Function to fetch and display rooms
@@ -196,12 +186,49 @@ async function deleteRoom(id) {
     }
 }
 
-function editRoom(id) {
-    // Your edit room logic here
-    console.log('Editing room:', id)
+async function editRoom(id) {
+    try {
+        // Fetch the room data
+        const response = await fetch(`/api/rooms/${id}`)
+        if (!response.ok) throw new Error('Failed to fetch room data')
+        const room = await response.json()
+        
+        // Populate the modal with existing data
+        document.getElementById('roomName').value = room.room_name
+        document.getElementById('roomNpub').value = room.room_npub
+        document.getElementById('roomNsec').value = room.room_nsec
+        document.getElementById('roomOwner').value = room.room_owner
+        document.getElementById('roomDescription').value = room.room_description || ''
+        document.getElementById('roomPictureUrl').value = room.room_picture_url || ''
+        document.getElementById('zapGoal').value = room.room_zap_goal || 0
+        document.getElementById('roomVisibility').checked = room.room_visibility
+        document.getElementById('relayUrl').value = room.room_relay_url || ''
+        document.getElementById('nostrAcl').value = (room.room_nostr_acl_list || []).join(', ')
+        document.getElementById('emailAcl').value = (room.room_email_acl_list || []).join(', ')
+        document.getElementById('saveChatDirective').checked = room.save_chat_directive
+        document.getElementById('roomNip05').value = room.room_nip05 || ''
+        document.getElementById('lightningAddress').value = room.room_lightning_address || ''
+        
+        // Store the room ID for the update
+        document.getElementById('addRoomForm').dataset.editId = id
+        
+        // Update modal title and submit button
+        const modalTitle = document.querySelector('#addRoomModal .text-xl')
+        modalTitle.textContent = 'Edit Room'
+        
+        const submitButton = document.querySelector('#addRoomForm button[type="submit"]')
+        submitButton.textContent = 'Update Room'
+        
+        // Show the modal
+        const modal = document.getElementById('addRoomModal')
+        modal.classList.remove('hidden')
+    } catch (error) {
+        console.error('Error loading room data:', error)
+        alert('Failed to load room data for editing')
+    }
 }
 
-// Add Room form submission
+// Modify the form submission handler
 document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
     e.preventDefault()
     
@@ -218,7 +245,7 @@ document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
             room_name: document.getElementById('roomName').value,
             room_npub: document.getElementById('roomNpub').value,
             room_nsec: document.getElementById('roomNsec').value,
-            room_owner: roomOwner,  // This is now validated as a UUID
+            room_owner: roomOwner,
             room_description: document.getElementById('roomDescription').value || null,
             room_picture_url: document.getElementById('roomPictureUrl').value || null,
             room_nip05: document.getElementById('roomNip05').value || null,
@@ -231,61 +258,189 @@ document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
             room_relay_url: document.getElementById('relayUrl').value || null
         }
 
-        console.log('Room ID:', roomOwner)
-        console.log('Full room data being sent:', roomData)
+        const editId = e.target.dataset.editId
+        const isEdit = Boolean(editId)
 
-        const response = await fetch('/api/rooms', {
-            method: 'POST',
+        const url = isEdit ? `/api/rooms/${editId}` : '/api/rooms'
+        const method = isEdit ? 'PUT' : 'POST'
+
+        const response = await fetch(url, {
+            method,
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(roomData)
         })
 
-        const responseText = await response.text()
-        console.log('Server response:', responseText)
-
         if (!response.ok) {
-            let errorMessage
-            try {
-                const errorData = JSON.parse(responseText)
-                // Improved error messaging for foreign key violations
-                if (errorData.code === '23503') {
-                    errorMessage = 'The specified room owner ID does not exist in the system. Please ensure the owner is registered first.'
-                } else {
-                    errorMessage = errorData.error || errorData.details || 'Failed to create room'
-                }
-            } catch {
-                errorMessage = responseText || 'Failed to create room'
-            }
-            throw new Error(errorMessage)
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Failed to save room')
         }
 
-        // Parse the success response
-        const data = JSON.parse(responseText)
-        console.log('Room created successfully:', data)
-        
-        // Close modal - Update this part
-        const modal = document.getElementById('addRoomModal')
-        if (modal) {
-            // Use the data-modal-hide attribute to close the modal
-            modal.setAttribute('aria-hidden', 'true')
-            modal.classList.add('hidden')
-            // Remove modal backdrop if it exists
-            const backdrop = document.querySelector('[modal-backdrop]')
-            if (backdrop) {
-                backdrop.remove()
-            }
-        }
-
-        // Refresh rooms list and reset form
-        fetchRooms()
+        // Reset form and modal state
         e.target.reset()
+        delete e.target.dataset.editId
+        
+        // Reset modal title and submit button
+        const modalTitle = document.querySelector('#addRoomModal .text-xl')
+        modalTitle.textContent = 'Add New Room'
+        
+        const submitButton = document.querySelector('#addRoomForm button[type="submit"]')
+        submitButton.textContent = 'Create Room'
+        
+        // Close modal
+        const modal = document.getElementById('addRoomModal')
+        modal.classList.add('hidden')
+        
+        // Refresh rooms list
+        fetchRooms()
     } catch (error) {
-        console.error('Error adding room:', error)
-        alert(`Failed to create room: ${error.message}`)
+        console.error('Error saving room:', error)
+        alert(`Failed to save room: ${error.message}`)
     }
+})
+
+// Add modal reset handler when closing
+document.querySelectorAll('[data-modal-hide="addRoomModal"]').forEach(button => {
+    button.addEventListener('click', () => {
+        const form = document.getElementById('addRoomForm')
+        form.reset()
+        delete form.dataset.editId
+        
+        // Reset modal title and submit button
+        const modalTitle = document.querySelector('#addRoomModal .text-xl')
+        modalTitle.textContent = 'Add New Room'
+        
+        const submitButton = document.querySelector('#addRoomForm button[type="submit"]')
+        submitButton.textContent = 'Create Room'
+    })
 })
 
 // Initial load of rooms
 fetchRooms();
+
+// Modal handling functions
+function openModal(modalId) {
+    const modal = document.getElementById(modalId)
+    if (!modal) return
+    
+    // Show modal
+    modal.classList.remove('hidden')
+    
+    // Set focus trap
+    const focusableElements = modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const firstFocusable = focusableElements[0]
+    const lastFocusable = focusableElements[focusableElements.length - 1]
+    
+    // Focus first input
+    firstFocusable?.focus()
+
+    // Trap focus in modal
+    modal.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            if (e.shiftKey) {
+                if (document.activeElement === firstFocusable) {
+                    e.preventDefault()
+                    lastFocusable?.focus()
+                }
+            } else {
+                if (document.activeElement === lastFocusable) {
+                    e.preventDefault()
+                    firstFocusable?.focus()
+                }
+            }
+        }
+    })
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId)
+    if (!modal) return
+    
+    // Hide modal
+    modal.classList.add('hidden')
+    
+    // Return focus to trigger
+    const trigger = document.querySelector(`[data-modal-target="${modalId}"]`)
+    trigger?.focus()
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Modal triggers
+    document.querySelectorAll('[data-modal-target]').forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            const modalId = trigger.getAttribute('data-modal-target')
+            openModal(modalId)
+        })
+    })
+
+    // Modal close buttons
+    document.querySelectorAll('[data-modal-hide]').forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            const modalId = trigger.getAttribute('data-modal-hide')
+            closeModal(modalId)
+        })
+    })
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const visibleModal = document.querySelector('[role="dialog"]:not(.hidden)')
+            if (visibleModal) {
+                closeModal(visibleModal.id)
+            }
+        }
+    })
+
+    // Close on backdrop click
+    document.querySelectorAll('[role="dialog"]').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal(modal.id)
+            }
+        })
+    })
+})
+
+// Add this function near the top of the file
+function initTabs() {
+    const tabButtons = document.querySelectorAll('[role="tab"]')
+    const tabPanels = document.querySelectorAll('[role="tabpanel"]')
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Deactivate all tabs
+            tabButtons.forEach(btn => {
+                btn.setAttribute('aria-selected', 'false')
+                btn.classList.remove('text-blue-600', 'border-blue-600')
+            })
+            
+            // Hide all panels
+            tabPanels.forEach(panel => {
+                panel.classList.add('hidden')
+            })
+            
+            // Activate clicked tab
+            button.setAttribute('aria-selected', 'true')
+            button.classList.add('text-blue-600', 'border-blue-600')
+            
+            // Show corresponding panel
+            const panelId = button.getAttribute('data-tabs-target').substring(1)
+            const panel = document.getElementById(panelId)
+            if (panel) {
+                panel.classList.remove('hidden')
+            }
+        })
+    })
+
+    // Set initial active tab
+    const initialTab = document.querySelector('[role="tab"][aria-selected="true"]') || tabButtons[0]
+    if (initialTab) {
+        initialTab.click()
+    }
+}
+
+// The initTabs() function is already being called in your DOMContentLoaded event listener
