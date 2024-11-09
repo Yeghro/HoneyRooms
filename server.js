@@ -236,6 +236,36 @@ app.get('/api/rooms/:id', async (req, res) => {
     }
 })
 
+// Modify the endpoint to use the correct table name and path
+app.get('/api/profiles/:profileId/pubkey', async (req, res) => {
+    try {
+        const { profileId } = req.params
+
+        // Get the user's pubkey from the profiles table
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('nostr_pubkey')
+            .eq('id', profileId)
+            .single()
+
+        if (profileError) throw profileError
+        if (!profileData) {
+            return res.status(404).json({ error: 'Profile not found' })
+        }
+
+        // Return just the pubkey
+        res.json({
+            pubkey: profileData.nostr_pubkey
+        })
+    } catch (error) {
+        console.error('Error fetching profile pubkey:', error)
+        res.status(500).json({ 
+            error: 'Failed to fetch profile pubkey',
+            details: error.message
+        })
+    }
+})
+
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)

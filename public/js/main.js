@@ -1,6 +1,14 @@
 import { generateSecretKey, getPublicKey } from 'https://esm.sh/nostr-tools@2.10.1/pure'
 import { bytesToHex } from 'https://esm.sh/@noble/hashes@1.3.3/utils'
 import * as nip19 from 'https://esm.sh/nostr-tools@2.10.1/nip19'
+import { SimplePool } from 'https://esm.sh/nostr-tools@2.1.3/pool'
+
+const DEFAULT_RELAYS = [
+    'wss://relay.damus.io',
+    'wss://nos.lol',
+    'wss://relay.nostr.band',
+    'wss://relay.primal.net'
+]
 
 function generateKeyPair() {
     try {
@@ -228,7 +236,180 @@ async function editRoom(id) {
     }
 }
 
-// Modify the form submission handler
+async function fetchKind3FromRelay(pool, hexPubkey) {
+    try {
+        const events = await pool.querySync(
+            DEFAULT_RELAYS,
+            {
+                kinds: [3],
+                authors: [hexPubkey],
+                limit: 1
+            },
+            {
+                timeout: 3000
+            }
+        )
+        return events
+    } catch (error) {
+        console.warn('Error querying relays:', error)
+        return []
+    }
+}
+
+async function fetchOwnerFollowList(profileId) {
+    const pool = new SimplePool()
+    
+    try {
+        const response = await fetch(`/api/profiles/${profileId}/pubkey`)
+        if (!response.ok) throw new Error('Failed to fetch user pubkey')
+        
+        const { pubkey } = await response.json()
+        if (!pubkey) throw new Error('Profile pubkey not found')
+
+        const decoded = nip19.decode(pubkey)
+        const hexPubkey = decoded.data
+        
+        console.log('Fetching kind 3 events for:', { npub: pubkey, hexPubkey })
+
+        const events = await fetchKind3FromRelay(pool, hexPubkey)
+        const latestEvent = events.reduce((latest, event) => {
+            return !latest || event.created_at > latest.created_at ? event : latest
+        }, null)
+
+        if (!latestEvent) {
+            console.log('No kind 3 events found')
+            return { contacts: [] }
+        }
+
+        // Process tags to extract pubkeys and petnames
+        const contacts = latestEvent.tags
+            .filter(tag => tag[0] === 'p')
+            .map(tag => {
+                const hexPubkey = tag[1]
+                const petname = tag[3] || '' // The 4th element (index 3) contains the petname
+                
+                try {
+                    return {
+                        npub: nip19.npubEncode(hexPubkey),
+                        hexPubkey,
+                        petname
+                    }
+                } catch (error) {
+                    console.warn('Failed to encode pubkey:', hexPubkey)
+                    return null
+                }
+            })
+            .filter(Boolean)
+
+        return { contacts }
+    } catch (error) {
+        console.error('Error fetching kind 3 events:', error)
+        throw error
+    } finally {
+        try {
+            await pool.close(DEFAULT_RELAYS)
+        } catch (error) {
+            console.warn('Error closing pool:', error)
+        }
+    }
+}
+
+// Update the updateAclList function to display petnames
+function updateAclList(contacts, containerId) {
+    console.log('Updating ACL list with contacts:', contacts)
+    
+    const container = document.getElementById(containerId)
+    if (!container) {
+        console.error('Container not found:', containerId)
+        return
+    }
+    
+    container.innerHTML = ''
+    
+    if (!Array.isArray(contacts) || contacts.length === 0) {
+        container.innerHTML = '<div class="text-gray-500 text-sm p-2">No followers found</div>'
+        return
+    }
+    
+    contacts.forEach(contact => {
+        if (!contact?.npub) return
+        
+        const item = document.createElement('div')
+        item.className = 'flex items-center justify-between p-2 bg-gray-50 rounded mb-2'
+        
+        // Create display text with petname if available
+        const displayText = contact.petname 
+            ? `${contact.petname} (${contact.npub.slice(0, 8)}...)`
+            : contact.npub
+
+        item.innerHTML = `
+            <div class="flex-1">
+                <span class="text-sm text-gray-700 truncate">${displayText}</span>
+                ${contact.petname ? `
+                    <span class="text-xs text-gray-500 block">
+                        ${contact.npub}
+                    </span>
+                ` : ''}
+            </div>
+            <button type="button" class="remove-npub ml-2 text-red-500 hover:text-red-700">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        `
+        
+        // Add remove functionality
+        item.querySelector('.remove-npub').addEventListener('click', () => {
+            item.remove()
+            updateHiddenInput()
+        })
+        
+        container.appendChild(item)
+    })
+    
+    updateHiddenInput()
+}
+
+// Update the hidden input function to handle the new format
+function updateHiddenInput() {
+    const container = document.getElementById('nostrAclList')
+    const hiddenInput = document.getElementById('nostrAcl')
+    const npubs = Array.from(container.children)
+        .map(item => {
+            const npubText = item.querySelector('.text-xs')?.textContent?.trim() || 
+                           item.querySelector('.text-sm')?.textContent?.trim()
+            return npubText?.includes('npub') ? npubText : null
+        })
+        .filter(Boolean)
+    hiddenInput.value = npubs.join(',')
+}
+
+// Update the click handler
+document.getElementById('fetchFollowList').addEventListener('click', async () => {
+    const button = document.getElementById('fetchFollowList')
+    const originalText = button.textContent
+    
+    try {
+        button.textContent = 'Loading...'
+        button.disabled = true
+
+        const roomOwner = document.getElementById('roomOwner').value.trim()
+        if (!roomOwner) {
+            throw new Error('Please enter a room owner UUID first')
+        }
+
+        const result = await fetchOwnerFollowList(roomOwner)
+        updateAclList(result.contacts, 'nostrAclList')
+    } catch (error) {
+        console.error('Error fetching follow list:', error)
+        alert('Failed to fetch following list: ' + error.message)
+    } finally {
+        button.textContent = originalText
+        button.disabled = false
+    }
+})
+
+// Modify the form submission handler to include this new functionality
 document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
     e.preventDefault()
     
@@ -252,7 +433,7 @@ document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
             room_lightning_address: document.getElementById('lightningAddress').value || null,
             room_zap_goal: parseInt(document.getElementById('zapGoal').value) || 0,
             room_visibility: document.getElementById('roomVisibility').checked,
-            room_nostr_acl_list: document.getElementById('nostrAcl').value.split(',').map(s => s.trim()).filter(Boolean),
+            room_nostr_acl_list: document.getElementById('nostrAcl').value.split(',').filter(Boolean),
             room_email_acl_list: document.getElementById('emailAcl').value.split(',').map(s => s.trim()).filter(Boolean),
             save_chat_directive: document.getElementById('saveChatDirective').checked,
             room_relay_url: document.getElementById('relayUrl').value || null
@@ -297,6 +478,23 @@ document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
     } catch (error) {
         console.error('Error saving room:', error)
         alert(`Failed to save room: ${error.message}`)
+    }
+})
+
+// Add event listener for the fetch following list button
+document.getElementById('fetchFollowList').addEventListener('click', async () => {
+    try {
+        const roomOwner = document.getElementById('roomOwner').value.trim()
+        if (!roomOwner) {
+            alert('Please enter a room owner UUID first')
+            return
+        }
+
+        const followList = await fetchOwnerFollowList(roomOwner)
+        updateAclList(followList.contacts, 'nostrAclList')
+    } catch (error) {
+        console.error('Error fetching follow list:', error)
+        alert('Failed to fetch following list: ' + error.message)
     }
 })
 
